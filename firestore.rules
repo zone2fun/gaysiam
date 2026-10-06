@@ -1,0 +1,184 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email == 'zone2fun@gmail.com')
+      );
+    }
+
+    // Validation Helpers
+    function isValidUser(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100 &&
+             data.email is string && data.email.size() <= 200 &&
+             (!('coverURL' in data) || (data.coverURL is string)) &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() <= 500)) &&
+             (!('province' in data) || (data.province is string && data.province.size() <= 100)) &&
+             (!('country' in data) || (data.country is string && data.country.size() <= 100)) &&
+             (!('gayType' in data) || (data.gayType is string && data.gayType.size() <= 100)) &&
+             (!('gallery' in data) || (data.gallery is list && data.gallery.size() <= 15)) &&
+             (!('pinnedGroupIds' in data) || (data.pinnedGroupIds is list && data.pinnedGroupIds.size() <= 100));
+    }
+
+    function isValidGroup(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.ownerId is string && data.ownerId.size() <= 128 &&
+             data.adminIds is list && data.adminIds.size() <= 50 &&
+             data.memberIds is list && data.memberIds.size() <= 200;
+    }
+
+    function isValidMessage(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.groupId is string && data.groupId.size() <= 128 &&
+             data.senderId is string && data.senderId.size() <= 128 &&
+             data.senderName is string && data.senderName.size() <= 100 &&
+             (!('text' in data) || (data.text is string && data.text.size() <= 5000));
+    }
+
+    function isGroupMember(groupId) {
+      return isSignedIn() && (
+        request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds ||
+        isAdmin()
+      );
+    }
+
+    function isGroupAdmin(groupId) {
+      return isSignedIn() && (
+        request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminIds ||
+        get(/databases/$(database)/documents/groups/$(groupId)).data.ownerId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.auth.uid == userId && incoming().id == userId && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && incoming().id == userId && isValidUser(incoming());
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Groups
+    match /groups/{groupId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(groupId) &&
+                       incoming().id == groupId &&
+                       incoming().ownerId == request.auth.uid &&
+                       request.auth.uid in incoming().memberIds &&
+                       request.auth.uid in incoming().adminIds &&
+                       isValidGroup(incoming());
+      allow update: if isSignedIn() && isValidId(groupId) &&
+                       isValidGroup(incoming()) &&
+                       incoming().ownerId == existing().ownerId &&
+                       (
+                         request.auth.uid in existing().adminIds ||
+                         existing().ownerId == request.auth.uid ||
+                         isAdmin() ||
+                         (incoming().diff(existing()).affectedKeys().hasOnly(['memberIds', 'updatedAt']))
+                       );
+      allow delete: if isSignedIn() && isValidId(groupId) &&
+                       (existing().ownerId == request.auth.uid || isAdmin());
+
+      // Group Messages Subcollection
+      match /messages/{messageId} {
+        allow get, list: if get(/databases/$(database)/documents/groups/$(groupId)).data.isPrivate == false ||
+                            isGroupMember(groupId);
+        allow create: if isGroupMember(groupId) &&
+                         isValidId(messageId) &&
+                         incoming().id == messageId &&
+                         incoming().groupId == groupId &&
+                         incoming().senderId == request.auth.uid &&
+                         isValidMessage(incoming());
+        allow update: if isGroupMember(groupId) &&
+                         isValidId(messageId) &&
+                         incoming().id == messageId &&
+                         incoming().groupId == groupId &&
+                         incoming().senderId == existing().senderId &&
+                         isValidMessage(incoming()) &&
+                         (
+                           (request.auth.uid == existing().senderId && incoming().diff(existing()).affectedKeys().hasOnly(['text', 'fileUrl', 'fileName', 'fileType', 'fileSize', 'reactions', 'isPinned', 'updatedAt'])) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['reactions']) ||
+                           (isGroupAdmin(groupId) && incoming().diff(existing()).affectedKeys().hasOnly(['isPinned', 'reactions']))
+                         );
+        allow delete: if isSignedIn() && isValidId(messageId) &&
+                         (request.auth.uid == existing().senderId || isGroupAdmin(groupId) || isAdmin());
+      }
+    }
+
+    function isDirectChatParticipant(chatId) {
+      return isSignedIn() && (
+        request.auth.uid in get(/databases/$(database)/documents/direct_chats/$(chatId)).data.participantIds ||
+        isAdmin()
+      );
+    }
+
+    // Direct 1:1 Chats
+    match /direct_chats/{chatId} {
+      allow get: if isSignedIn() && (
+        resource == null ||
+        request.auth.uid in resource.data.participantIds ||
+        isAdmin()
+      );
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() &&
+                       request.auth.uid in incoming().participantIds &&
+                       incoming().participantIds.size() == 2;
+      allow update: if isSignedIn() && (
+                       (resource != null && request.auth.uid in resource.data.participantIds) ||
+                       (incoming() != null && request.auth.uid in incoming().participantIds) ||
+                       isAdmin()
+                     );
+      allow delete: if isSignedIn() && (
+                       (resource != null && request.auth.uid in resource.data.participantIds) ||
+                       isAdmin()
+                     );
+
+      // Direct Messages Subcollection
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && (
+          resource == null ||
+          isDirectChatParticipant(chatId)
+        );
+        allow list: if isDirectChatParticipant(chatId);
+        allow create: if isDirectChatParticipant(chatId) &&
+                         incoming().senderId == request.auth.uid &&
+                         incoming().chatId == chatId;
+        allow update: if isDirectChatParticipant(chatId);
+        allow delete: if isDirectChatParticipant(chatId) &&
+                         (request.auth.uid == existing().senderId || isAdmin());
+      }
+    }
+
+    // System Admins
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

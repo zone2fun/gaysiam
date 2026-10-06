@@ -1,0 +1,387 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile representation in CollabSphere",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user identifier matching auth UID",
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User visible name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 200
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Profile picture URL or avatar",
+          "maxLength": 1000
+        },
+        "coverURL": {
+          "type": "string",
+          "description": "Profile cover banner image URL",
+          "maxLength": 1000
+        },
+        "status": {
+          "type": "string",
+          "description": "User activity status",
+          "enum": ["online", "offline", "away"]
+        },
+        "lastSeen": {
+          "type": "string",
+          "description": "Last activity timestamp"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Account registration timestamp"
+        },
+        "bio": {
+          "type": "string",
+          "description": "User bio or self introduction",
+          "maxLength": 500
+        },
+        "age": {
+          "type": "number",
+          "description": "User age in years"
+        },
+        "height": {
+          "type": "number",
+          "description": "User height in centimeters"
+        },
+        "weight": {
+          "type": "number",
+          "description": "User weight in kilograms"
+        },
+        "province": {
+          "type": "string",
+          "description": "Province or state of residence",
+          "maxLength": 100
+        },
+        "country": {
+          "type": "string",
+          "description": "Country of residence",
+          "maxLength": 100
+        },
+        "gayType": {
+          "type": "string",
+          "description": "Gay type/identity preference (e.g., Top, Bottom, Versatile, Bear, Twink, etc.)",
+          "maxLength": 100
+        },
+        "gallery": {
+          "type": "array",
+          "description": "List of user photo gallery image URLs (max 9)"
+        }
+      },
+      "required": ["id", "displayName", "email"]
+    },
+    "Group": {
+      "title": "Group",
+      "description": "Chat group and community channel",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique group ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Group name",
+          "maxLength": 100,
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "description": "Group description or topic",
+          "maxLength": 500
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Group avatar icon or emoji",
+          "maxLength": 200
+        },
+        "color": {
+          "type": "string",
+          "description": "Theme color identifier",
+          "maxLength": 50
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "User ID of group creator",
+          "maxLength": 128
+        },
+        "adminIds": {
+          "type": "array",
+          "description": "List of user IDs with admin privileges in this group"
+        },
+        "memberIds": {
+          "type": "array",
+          "description": "List of all member user IDs in this group"
+        },
+        "isPrivate": {
+          "type": "boolean",
+          "description": "Whether group requires invite code to join"
+        },
+        "inviteCode": {
+          "type": "string",
+          "description": "Short code for joining group",
+          "maxLength": 32
+        },
+        "pinnedMessage": {
+          "type": "string",
+          "description": "Current pinned announcement",
+          "maxLength": 1000
+        },
+        "lastMessageText": {
+          "type": "string",
+          "description": "Snippet of latest message",
+          "maxLength": 300
+        },
+        "lastMessageTime": {
+          "type": "string",
+          "description": "Timestamp of latest message"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Group creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Group update timestamp"
+        }
+      },
+      "required": ["id", "name", "ownerId", "adminIds", "memberIds"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message sent in a group",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique message ID",
+          "maxLength": 128
+        },
+        "groupId": {
+          "type": "string",
+          "description": "Group ID message belongs to",
+          "maxLength": 128
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Author UID",
+          "maxLength": 128
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Sender display name",
+          "maxLength": 100
+        },
+        "senderPhoto": {
+          "type": "string",
+          "description": "Sender profile photo URL",
+          "maxLength": 1000
+        },
+        "text": {
+          "type": "string",
+          "description": "Message text body",
+          "maxLength": 5000
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "Optional file or image data URL/link",
+          "maxLength": 800000
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Original file name",
+          "maxLength": 255
+        },
+        "fileType": {
+          "type": "string",
+          "description": "File category: image, document, audio",
+          "enum": ["image", "document", "audio", "none"]
+        },
+        "fileSize": {
+          "type": "number",
+          "description": "File size in bytes"
+        },
+        "replyToId": {
+          "type": "string",
+          "description": "Referenced parent message ID if reply",
+          "maxLength": 128
+        },
+        "replyToText": {
+          "type": "string",
+          "description": "Snippet of message being replied to",
+          "maxLength": 200
+        },
+        "reactions": {
+          "type": "object",
+          "description": "Map of emoji to array of user IDs"
+        },
+        "isPinned": {
+          "type": "boolean",
+          "description": "Whether message is pinned"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Message creation timestamp"
+        }
+      },
+      "required": ["id", "groupId", "senderId", "senderName"]
+    },
+    "DirectChat": {
+      "title": "DirectChat",
+      "description": "1:1 direct chat session between two users",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique compound direct chat ID (dm_uidA_uidB)",
+          "maxLength": 260
+        },
+        "participantIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of 2 user IDs participating in this chat"
+        },
+        "lastMessageText": {
+          "type": "string",
+          "description": "Preview snippet of last message",
+          "maxLength": 500
+        },
+        "lastMessageTime": {
+          "type": "string",
+          "description": "Timestamp of last message"
+        },
+        "lastSenderId": {
+          "type": "string",
+          "description": "User ID of who sent the last message"
+        },
+        "unreadCount": {
+          "type": "object",
+          "description": "Map of user ID to unread messages count"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp"
+        }
+      },
+      "required": ["id", "participantIds"]
+    },
+    "DirectMessage": {
+      "title": "DirectMessage",
+      "description": "Direct chat message in 1:1 conversation",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique direct message ID",
+          "maxLength": 128
+        },
+        "chatId": {
+          "type": "string",
+          "description": "Parent direct chat ID",
+          "maxLength": 260
+        },
+        "senderId": {
+          "type": "string",
+          "description": "User ID of sender",
+          "maxLength": 128
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Display name of sender",
+          "maxLength": 100
+        },
+        "senderPhoto": {
+          "type": "string",
+          "description": "Avatar URL of sender",
+          "maxLength": 1000
+        },
+        "text": {
+          "type": "string",
+          "description": "Message text",
+          "maxLength": 5000
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "Attachment file or image URL",
+          "maxLength": 800000
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Attachment file name",
+          "maxLength": 255
+        },
+        "fileType": {
+          "type": "string",
+          "description": "Type: image, document, audio, none",
+          "enum": ["image", "document", "audio", "none"]
+        },
+        "fileSize": {
+          "type": "number",
+          "description": "File size in bytes"
+        },
+        "reactions": {
+          "type": "object",
+          "description": "Map of emoji to array of user IDs"
+        },
+        "read": {
+          "type": "boolean",
+          "description": "Whether message has been seen by recipient"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Message timestamp"
+        }
+      },
+      "required": ["id", "chatId", "senderId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "User profiles and presence"
+    },
+    "/groups/{groupId}": {
+      "schema": {
+        "$ref": "#/entities/Group"
+      },
+      "description": "Chat groups and member management"
+    },
+    "/groups/{groupId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/Message"
+      },
+      "description": "Real-time chat messages within each group"
+    },
+    "/direct_chats/{chatId}": {
+      "schema": {
+        "$ref": "#/entities/DirectChat"
+      },
+      "description": "1:1 direct conversations"
+    },
+    "/direct_chats/{chatId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/DirectMessage"
+      },
+      "description": "Messages inside 1:1 direct chat"
+    }
+  }
+}

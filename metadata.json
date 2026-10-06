@@ -1,0 +1,7 @@
+{
+  "name": "CollabSphere - Real-time Group Chat & Community",
+  "description": "ระบบแชทกลุ่มแบบเรียลไทม์ จัดการสมาชิก กำหนดสิทธิ์แอดมิน แชร์ไฟล์รูปภาพและเอกสาร พร้อมประวัติการสนทนาและโหมดกลางคืน (Dark Mode)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
